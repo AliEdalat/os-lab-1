@@ -42,8 +42,9 @@ void write_to_file(char** argv, int* indices, int argc)
     for (i = 0; i < argc - 1; ++i)
     {
         write(fd, argv[indices[i] + 1], strlen(argv[indices[i] + 1]));
-	write(fd, " ", 1);
+	    write(fd, " ", 1);
     }
+    
     write(fd, "\n", 1);
 }
 
