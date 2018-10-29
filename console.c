@@ -123,7 +123,7 @@ panic(char *s)
     ;
 }
 
-//PAGEBREAK: 50
+
 #define BACKSPACE 0x100
 #define LEFT 228
 #define RIGHT 229
@@ -131,9 +131,10 @@ panic(char *s)
 #define DOWN 227
 #define CRTPORT 0x3d4
 #define BUFF_SIZE 80
+
+
 static ushort *crt = (ushort*)P2V(0xb8000);  // CGA memory
-//static int maximum_pos = 0;
-//static int minimum_pos = 24*80;
+
 static void
 cgaputc(int c)
 {
@@ -145,51 +146,38 @@ cgaputc(int c)
   outb(CRTPORT, 15);
   pos |= inb(CRTPORT+1);
 
-  //if(pos > maximum_pos)
-  //  maximum_pos = pos;
-
-  if(c == '\n')
-    pos += BUFF_SIZE - pos % BUFF_SIZE;
-  else if(c == BACKSPACE) {
-      //backspace_hit = 1;
+  if(c == '\n') {
+      pos += BUFF_SIZE - pos % BUFF_SIZE;
+  } else if(c == BACKSPACE) {
       if (pos > 0){
- 	--pos;
-	//maximum_pos = pos + 1;
-	memmove(crt + pos, crt + pos + 1, sizeof(crt[0])*(24*80 - pos));
+          --pos;
+          memmove(crt + pos, crt + pos + 1, sizeof(crt[0])*(24*BUFF_SIZE - pos));
       }
   } else if(c == LEFT){
       if (pos > 0)
-	--pos;
+          --pos;
   } else if(c == RIGHT){
-      /*if (pos < maximum_pos)*/ ++pos;
-  } else if(c == UP){
-    // Up
-  } else if(c == DOWN){
-    // Down
-  } else{
-    memmove(crt + pos + 1, crt + pos, sizeof(crt[0])*(24*80 - pos));
+      ++pos; /*if (pos < maximum_pos)*/
+  } else if(c == UP || c == DOWN){
+      // taking no action for UP or DOWN as is reasonable
+  } else {
+    memmove(crt + pos + 1, crt + pos, sizeof(crt[0]) * (24 * BUFF_SIZE - pos));
     crt[pos++] = (c & 0xff) | 0x0700;  // black on white
-   // if(pos > maximum_pos)
-     // maximum_pos = pos;
   }
 
-  if(pos < 0 || pos > 25*80)
+  if(pos < 0 || pos > 25 * BUFF_SIZE)
     panic("pos under/overflow");
 
-  if((pos/80) >= 24){  // Scroll up.
-    memmove(crt, crt+80, sizeof(crt[0])*23*80);
-    pos -= 80;
-    memset(crt+pos, 0, sizeof(crt[0])*(24*80 - pos));
+  if((pos/BUFF_SIZE) >= 24){  // Scroll up.
+    memmove(crt, crt + BUFF_SIZE, sizeof(crt[0]) * 23 * BUFF_SIZE);
+    pos -= BUFF_SIZE;
+    memset(crt+pos, 0, sizeof(crt[0]) * (24 * BUFF_SIZE - pos));
   }
 
   outb(CRTPORT, 14);
-  outb(CRTPORT+1, pos>>8);
+  outb(CRTPORT + 1, pos >> 8);
   outb(CRTPORT, 15);
-  outb(CRTPORT+1, pos);
- // if(backspace_hit) {
-  //	crt[pos] = ' ' | 0x0700;
-//	backspace_hit = 0;
- // }
+  outb(CRTPORT + 1, pos);
 }
 
 void
